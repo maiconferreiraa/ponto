@@ -80,7 +80,7 @@
   .add-toggle{ margin-top:10px; border:1px dashed var(--line-strong); background:none; color:var(--ink-soft); font-size:.82rem; font-weight:600; padding:8px 12px; border-radius:8px; width:100%; }
   .add-toggle:hover{ color:var(--ink); border-color:var(--ink-soft); }
   .add-form{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center; }
-  .add-form input[type="time"],.add-form select{ padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:var(--paper); color:var(--ink); font-size:.85rem; }
+  .add-form input[type="date"],.add-form input[type="time"],.add-form select{ padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:var(--paper); color:var(--ink); font-size:.85rem; }
   .add-form button[type="submit"]{ padding:8px 14px; border-radius:8px; border:none; background:var(--ink); color:var(--paper-raised); font-weight:600; font-size:.85rem; }
 
   .tear{ border:none; border-top:2px dashed var(--line-strong); margin:0; }
@@ -392,6 +392,7 @@ var db = getFirestore(app);
       + (formOpen ? "Cancelar" : "+ Adicionar marcação manualmente") + '</button>';
     if (formOpen){
       addHtml += '<form class="add-form" data-nome="'+nome+'" data-key="'+key+'" data-action-form="add-punch">'
+        + '<input type="date" name="data" value="'+key+'" required>'
         + '<input type="time" name="hora" step="1" required>'
         + '<select name="tipo">' + Object.keys(TIPOS).map(function(t){ return '<option value="'+t+'">'+TIPOS[t].label+'</option>'; }).join("") + '</select>'
         + '<button type="submit">Adicionar</button></form>';
@@ -443,11 +444,11 @@ var db = getFirestore(app);
     }).catch(function(e){ console.error(e); showNotice("Não foi possível remover a marcação."); });
   }
 
-  function addManualPunch(nome, key, hora, tipo){
-    var d = parseDateKey(key);
+  function addManualPunch(nome, key, data, hora, tipo){
+    var d = parseDateKey(data);
     var formKey = nome+"|"+key;
-    writePunch(nome, key, hora.length===5?hora+":00":hora, WEEKDAY_LONG[d.getDay()], tipo)
-      .then(function(){ state.addFormOpen[formKey] = false; })
+    writePunch(nome, data, hora.length===5?hora+":00":hora, WEEKDAY_LONG[d.getDay()], tipo)
+      .then(function(){ state.addFormOpen[formKey] = false; if (data===state.todayKey && nome===state.nome) renderHoje(); else renderReport(); })
       .catch(function(e){ console.error(e); showNotice("Não foi possível adicionar a marcação."); });
   }
 
@@ -711,10 +712,11 @@ var db = getFirestore(app);
     if (!form) return;
     ev.preventDefault();
     var nome = form.dataset.nome, key = form.dataset.key;
+    var data = form.querySelector('input[name="data"]').value || key;
     var hora = form.querySelector('input[name="hora"]').value;
     var tipo = form.querySelector('select[name="tipo"]').value;
-    if (!hora) return;
-    addManualPunch(nome, key, hora, tipo);
+    if (!hora || !data) return;
+    addManualPunch(nome, key, data, hora, tipo);
   }
 
   function bindEvents(){
