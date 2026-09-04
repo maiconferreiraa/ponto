@@ -461,8 +461,31 @@ var db = getFirestore(app);
     var d = parseDateKey(data);
     var formKey = nome+"|"+key;
     writePunch(nome, data, hora.length===5?hora+":00":hora, WEEKDAY_LONG[d.getDay()], tipo)
-      .then(function(){ state.addFormOpen[formKey] = false; if (data===state.todayKey && nome===state.nome) renderHoje(); else renderReport(); })
+      .then(function(){
+        state.addFormOpen[formKey] = false;
+        showNotice("Marcação adicionada em "+fmtDateShort(data)+".");
+        if (data===state.todayKey && nome===state.nome) renderHoje();
+        ensureDateVisibleInReport(nome, data);
+      })
       .catch(function(e){ console.error(e); showNotice("Não foi possível adicionar a marcação."); });
+  }
+
+  // Se a data adicionada cair fora do período do relatório em tela, expande
+  // o período pra ela ficar visível — senão a marcação parece ter sumido.
+  function ensureDateVisibleInReport(nome, data){
+    var filterMatches = state.reportFilter === "Todos" || (state.reportFilter || state.nome) === nome;
+    if (!filterMatches) return;
+    if (data >= state.range.start && data <= state.range.end) return;
+    state.range.preset = "custom";
+    state.range.start = data < state.range.start ? data : state.range.start;
+    state.range.end = data > state.range.end ? data : state.range.end;
+    el.customRange.hidden = false;
+    el.startInput.value = state.range.start;
+    el.endInput.value = state.range.end;
+    el.presetRow.querySelectorAll(".preset-btn").forEach(function(b){
+      b.setAttribute("aria-pressed", b.dataset.preset==="custom" ? "true":"false");
+    });
+    subscribeReport();
   }
 
   // ---------------- report ----------------
