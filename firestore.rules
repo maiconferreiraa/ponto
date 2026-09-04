@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Sem login: quem tem o link do site pode ler e gravar.
+    // Restrito às duas coleções que o app usa (nada mais fica exposto).
+    match /pontos/{docId} {
+      allow read, write: if true;
+    }
+    match /pessoas/{docId} {
+      allow read, write: if true;
+    }
+    match /config/{docId} {
+      allow read, write: if true;
+    }
+  }
+}

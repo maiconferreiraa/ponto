@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: cartao-de-ponto
+    runtime: static
+    buildCommand: ""
+    staticPublishPath: .
