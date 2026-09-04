@@ -393,7 +393,7 @@ var db = getFirestore(app);
     if (formOpen){
       addHtml += '<form class="add-form" data-nome="'+nome+'" data-key="'+key+'" data-action-form="add-punch">'
         + '<input type="date" name="data" value="'+key+'" required>'
-        + '<input type="time" name="hora" step="1" required>'
+        + '<input type="time" name="hora" required>'
         + '<select name="tipo">' + Object.keys(TIPOS).map(function(t){ return '<option value="'+t+'">'+TIPOS[t].label+'</option>'; }).join("") + '</select>'
         + '<button type="submit">Adicionar</button></form>';
     }
