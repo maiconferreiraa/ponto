@@ -537,11 +537,17 @@ var db = getFirestore(app);
     if (state.reportUnsub) state.reportUnsub();
     var nome = state.reportFilter || state.nome;
     var base = collection(db, "pontos");
-    var q = (nome === "Todos")
-      ? query(base, where("data",">=",state.range.start), where("data","<=",state.range.end), orderBy("data"), limit(400))
-      : query(base, where("nome","==",nome), where("data",">=",state.range.start), where("data","<=",state.range.end), orderBy("data"), limit(400));
+    // Filtra só por intervalo de data (índice automático do Firestore) e
+    // separa por nome no próprio código — evita depender de um índice
+    // composto configurado manualmente no console do Firebase.
+    var q = query(base, where("data",">=",state.range.start), where("data","<=",state.range.end), orderBy("data"), limit(400));
     state.reportUnsub = onSnapshot(q, function(snap){
-      var days = []; snap.forEach(function(d){ days.push(d.data()); });
+      var days = [];
+      snap.forEach(function(d){
+        var doc_ = d.data();
+        if (nome !== "Todos" && doc_.nome !== nome) return;
+        days.push(doc_);
+      });
       state.reportDays = days; renderReport();
     }, function(e){ console.error(e); showNotice("Erro ao carregar o relatório."); });
   }
