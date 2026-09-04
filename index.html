@@ -80,7 +80,10 @@
   .add-toggle{ margin-top:10px; border:1px dashed var(--line-strong); background:none; color:var(--ink-soft); font-size:.82rem; font-weight:600; padding:8px 12px; border-radius:8px; width:100%; }
   .add-toggle:hover{ color:var(--ink); border-color:var(--ink-soft); }
   .add-form{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center; }
-  .add-form input[type="date"],.add-form input[type="time"],.add-form select{ padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:var(--paper); color:var(--ink); font-size:.85rem; }
+  .add-form input[type="date"],.add-form select{ padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:var(--paper); color:var(--ink); font-size:.85rem; }
+  .time-select{ display:inline-flex; align-items:center; gap:4px; }
+  .time-select select{ font-family:var(--font-mono); }
+  .time-sep{ color:var(--ink-faint); font-family:var(--font-mono); }
   .add-form button[type="submit"]{ padding:8px 14px; border-radius:8px; border:none; background:var(--ink); color:var(--paper-raised); font-weight:600; font-size:.85rem; }
 
   .tear{ border:none; border-top:2px dashed var(--line-strong); margin:0; }
@@ -267,6 +270,15 @@ var db = getFirestore(app);
   function parseDateKey(key){ var p = key.split("-").map(Number); return new Date(p[0], p[1]-1, p[2]); }
   function fmtDateShort(key){ var d = parseDateKey(key); return pad2(d.getDate())+"/"+pad2(d.getMonth()+1); }
   function fmtTime(p){ return p && p.hora ? p.hora.slice(0,5) : ""; }
+  function timeSelectsHtml(defH, defM){
+    var hOpts = [];
+    for (var h=0; h<24; h++){ hOpts.push('<option value="'+pad2(h)+'"'+(h===defH?' selected':'')+'>'+pad2(h)+'</option>'); }
+    var mOpts = [];
+    for (var m=0; m<60; m++){ mOpts.push('<option value="'+pad2(m)+'"'+(m===defM?' selected':'')+'>'+pad2(m)+'</option>'); }
+    return '<select name="horaH" aria-label="Hora (24h)">'+hOpts.join("")+'</select>'
+      + '<span class="time-sep">:</span>'
+      + '<select name="horaM" aria-label="Minuto">'+mOpts.join("")+'</select>';
+  }
   function slug(s){ return String(s).trim().toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"") || "pessoa"; }
   function pontoId(nome, data){ return slug(nome) + "__" + data; }
   function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : (Date.now()+"-"+Math.random().toString(16).slice(2))); }
@@ -391,9 +403,10 @@ var db = getFirestore(app);
     var addHtml = '<button class="add-toggle" data-action="toggle-add" data-nome="'+nome+'" data-key="'+key+'">'
       + (formOpen ? "Cancelar" : "+ Adicionar marcação manualmente") + '</button>';
     if (formOpen){
+      var now = new Date();
       addHtml += '<form class="add-form" data-nome="'+nome+'" data-key="'+key+'" data-action-form="add-punch">'
         + '<input type="date" name="data" value="'+key+'" required>'
-        + '<input type="time" name="hora" required>'
+        + '<span class="time-select">' + timeSelectsHtml(now.getHours(), now.getMinutes()) + '</span>'
         + '<select name="tipo">' + Object.keys(TIPOS).map(function(t){ return '<option value="'+t+'">'+TIPOS[t].label+'</option>'; }).join("") + '</select>'
         + '<button type="submit">Adicionar</button></form>';
     }
@@ -713,7 +726,9 @@ var db = getFirestore(app);
     ev.preventDefault();
     var nome = form.dataset.nome, key = form.dataset.key;
     var data = form.querySelector('input[name="data"]').value || key;
-    var hora = form.querySelector('input[name="hora"]').value;
+    var horaH = form.querySelector('select[name="horaH"]').value;
+    var horaM = form.querySelector('select[name="horaM"]').value;
+    var hora = horaH + ":" + horaM;
     var tipo = form.querySelector('select[name="tipo"]').value;
     if (!hora || !data) return;
     addManualPunch(nome, key, data, hora, tipo);
