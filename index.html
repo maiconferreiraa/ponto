@@ -28,6 +28,9 @@
   .app{ max-width:640px; margin:0 auto; padding:24px 16px 72px; display:flex; flex-direction:column; gap:24px; }
   header.top{ display:flex; flex-direction:column; gap:2px; }
   .eyebrow{ font-family:var(--font-display); font-weight:700; font-size:.78rem; letter-spacing:.14em; text-transform:uppercase; color:var(--stamp); }
+  .top-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .logout-btn{ border:1px solid var(--line); background:var(--paper); color:var(--ink-soft); font-size:.75rem; font-weight:600; padding:5px 11px; border-radius:999px; }
+  .logout-btn:hover{ color:var(--stamp); border-color:var(--stamp-tint); background:var(--stamp-tint); }
   h1{ font-family:var(--font-display); font-weight:800; font-size:clamp(1.9rem,6vw,2.4rem); letter-spacing:.01em; margin:0; }
   .sub{ font-size:.85rem; color:var(--ink-soft); margin-top:2px; }
 
@@ -151,7 +154,10 @@
 
 <div class="app" id="app" hidden>
   <header class="top">
-    <span class="eyebrow">Cartão de Ponto</span>
+    <div class="top-row">
+      <span class="eyebrow">Cartão de Ponto</span>
+      <button class="logout-btn" data-action="logout" type="button">Sair</button>
+    </div>
     <h1>Registro de jornada</h1>
     <p class="sub" id="whoLine">Sincroniza automaticamente — abra este link de onde estiver.</p>
   </header>
@@ -682,7 +688,22 @@ var db = getFirestore(app);
       csvExport();
     } else if (action==="pdf"){
       pdfExport();
+    } else if (action==="logout"){
+      logout();
     }
+  }
+
+  function logout(){
+    if (state.todayUnsub) state.todayUnsub();
+    if (state.reportUnsub) state.reportUnsub();
+    if (state.settingsUnsub) state.settingsUnsub();
+    try { localStorage.removeItem("pontoNome"); } catch(e){}
+    state.nome = ""; state.reportFilter = ""; state.todayPunches = [];
+    state.manualSelection = false; state.expandedDays = {}; state.addFormOpen = {};
+    el.app.hidden = true;
+    el.gate.hidden = false;
+    el.gateInput.value = "";
+    el.gateInput.focus();
   }
 
   function onAppSubmit(ev){
